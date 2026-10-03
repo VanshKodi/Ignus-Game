@@ -145,10 +145,10 @@
 
   /* ================= timer ================= */
   var tReadout = $('t-readout'), tTime = $('t-time'), tState = $('t-state');
-  var btnStartT = $('btn-start-t'), btnPauseT = $('btn-pause-t'), btnResumeT = $('btn-resume-t'), btnResetT = $('btn-reset-t');
+  var btnStartT = $('btn-start-t'), btnPauseT = $('btn-pause-t'), btnResumeT = $('btn-resume-t'), btnResetT = $('btn-reset-t'), btnSkipT = $('btn-skip-t');
 
   function renderTimer(s) {
-    if (!tReadout || !tTime || !tState || !btnStartT || !btnPauseT || !btnResumeT || !btnResetT) return;
+    if (!tReadout || !tTime || !tState || !btnStartT || !btnPauseT || !btnResumeT || !btnResetT || !btnSkipT) return;
     var t = s.timer;
     var rem = Store.remainingMs(t, Date.now());
     var sec = (t.status === 'ready' || t.status === 'paused')
@@ -178,6 +178,7 @@
     btnPauseT.disabled = (t.status !== 'running');
     btnResumeT.disabled = (t.status !== 'paused');
     btnResetT.disabled = (t.status === 'ready');
+    btnSkipT.disabled = s.phase !== 'playing' || t.status === 'up';
   }
 
   on(btnStartT, 'click', function () {
@@ -190,6 +191,7 @@
   on(btnPauseT, 'click', function () { Store.pauseTimer(); cue('pause'); toast('Timer paused'); });
   on(btnResumeT, 'click', function () { Store.resumeTimer(); cue('resume'); toast('Timer resumed', 'good'); });
   on(btnResetT, 'click', function () { Store.resetTimer(); toast('Timer reset → 00:45 READY'); });
+  on(btnSkipT, 'click', function () { SFX.unlock(); Store.skipTimer(); cue('timesup'); toast("Timer skipped — Wordle-style hints unlocked", 'good'); });
 
   /* ================= verdict ================= */
   var aVerdict = $('a-verdict'), aAnswerText = $('a-answer-text'), aHint = $('a-hint');

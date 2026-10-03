@@ -67,6 +67,7 @@ function mutate(room, command, args = {}) {
     case 'pauseTimer': if (s.timer.status === 'running') { s.timer.elapsedBefore = elapsedMs(s.timer); s.timer.startedAt = null; s.timer.status = 'paused'; } break;
     case 'resumeTimer': if (s.timer.status === 'paused') { s.timer.startedAt = Date.now(); s.timer.status = 'running'; } break;
     case 'resetTimer': resetTimer(); break;
+    case 'skipTimer': if (s.phase === 'playing') { s.timer.elapsedBefore = s.timer.durationMs; s.timer.startedAt = null; s.timer.status = 'up'; } break;
     case 'bumpHint': if (s.phase === 'playing' && s.timer.status === 'up' && !q().resolved && !q().revealed) q().hintStage = Math.min(3, (q().hintStage || 0) + 1); break;
     case 'goToQuestion': { const idx = Math.max(0, Math.min(QUESTIONS_COUNT - 1, Number(args.index) || 0)); s.qIndex = idx; resetTimer(); s.boardFocus = false; s.lastAward = null; if (s.phase === 'home' || s.phase === 'cinematic' || s.phase === 'complete') s.phase = 'playing'; if (args.clear) s.qState[idx] = questionState(); break; }
     case 'nextQuestion': if (s.qIndex >= QUESTIONS_COUNT - 1) { s.phase = 'complete'; resetTimer(); s.boardFocus = true; } else { s.qIndex++; resetTimer(); s.boardFocus = false; s.lastAward = null; s.qState[s.qIndex] = questionState(); } break;
