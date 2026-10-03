@@ -33,7 +33,14 @@ function elapsedMs(timer, now = Date.now()) { return (timer.elapsedBefore || 0) 
 function settle(state) {
   if (state.phase === 'cinematic' && state.introRunAt && Date.now() - state.introRunAt >= 5050) {
     state.phase = 'playing';
-    state.timer = { status: 'ready', durationMs: DURATION_MS, startedAt: null, elapsedBefore: 0 };
+    state.timer = { status: 'running', durationMs: DURATION_MS, startedAt: Date.now(), elapsedBefore: 0 };
+    state.rev++;
+    state.updatedAt = Date.now();
+    return true;
+  }
+  if (state.phase === 'playing' && state.timer.status === 'ready') {
+    state.timer.startedAt = Date.now();
+    state.timer.status = 'running';
     state.rev++;
     state.updatedAt = Date.now();
     return true;

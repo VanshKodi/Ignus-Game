@@ -169,7 +169,8 @@
     else if (t.status === 'paused') phase = 'warn';
     if (tReadout.getAttribute('data-phase') !== phase) tReadout.setAttribute('data-phase', phase);
 
-    btnStartT.disabled = (t.status === 'running' || t.status === 'up');
+    btnStartT.textContent = s.phase === 'home' ? 'START FAMILY FEUD' : 'TIMER AUTO-START';
+    btnStartT.disabled = s.phase !== 'home';
     btnPauseT.disabled = (t.status !== 'running');
     btnResumeT.disabled = (t.status !== 'paused');
     btnResetT.disabled = (t.status === 'ready');
@@ -180,9 +181,7 @@
     if (Store.state.phase === 'home' || Store.state.phase === 'cinematic' || Store.state.phase === 'complete') {
       if (Store.state.phase === 'home') { Store.startGame(); return; }
     }
-    if (Store.state.timer.status === 'up') toast('Timer already elapsed — RESET TIMER first', 'bad');
-    Store.startTimer();
-    cue('start');
+    if (Store.state.phase === 'home') Store.startGame();
   });
   btnPauseT.addEventListener('click', function () { Store.pauseTimer(); cue('pause'); toast('Timer paused'); });
   btnResumeT.addEventListener('click', function () { Store.resumeTimer(); cue('resume'); toast('Timer resumed', 'good'); });
@@ -192,7 +191,6 @@
   var aVerdict = $('a-verdict'), aAnswerText = $('a-answer-text'), aHint = $('a-hint');
   var btnReveal = $('btn-reveal');
   var btnHint = $('btn-hint'), aHintStage = $('a-hintstage');
-  var btnCorrect = $('btn-correct'), btnIncorrect = $('btn-incorrect');
 
   btnReveal.addEventListener('click', function () {
     SFX.unlock();
@@ -211,20 +209,6 @@
 
   btnHint.addEventListener('click', giveHint);
 
-  btnCorrect.addEventListener('click', function () {
-    SFX.unlock();
-    Store.markVerdict('correct');
-    cue('correct');
-    toast('Marked CORRECT — now give the points to the team', 'good');
-  });
-
-  btnIncorrect.addEventListener('click', function () {
-    SFX.unlock();
-    Store.markVerdict('incorrect');
-    cue('incorrect');
-    toast('Marked INCORRECT', 'bad');
-  });
-
   function renderAnswerState(s) {
     var qs = s.qState[s.qIndex];
     var ans = Q[s.qIndex].answer;
@@ -233,11 +217,10 @@
     var stage = qs.hintStage || 0;
     var maxStages = window.HINT_STAGES || 3;
 
-    var label = qs.resolved
-      ? (qs.verdict === 'correct' ? 'CORRECT' : 'INCORRECT')
-      : (s.timer.status === 'up' ? 'TIME\u2019S UP — RESOLVE' : 'AWAITING ANSWER');
+    var label = qs.resolved ? 'QUESTION COMPLETE'
+      : (s.timer.status === 'up' ? 'TIME\u2019S UP — SCORE THE TEAM' : 'AWAITING ANSWER');
     if (aVerdict.textContent !== label) aVerdict.textContent = label;
-    aVerdict.className = 'chip' + (qs.resolved ? (qs.verdict === 'correct' ? ' ok' : ' bad') : '');
+    aVerdict.className = 'chip' + (qs.resolved ? ' ok' : '');
 
     var hint;
     if (qs.resolved) {
@@ -246,19 +229,17 @@
     } else if (stage > 0) {
       var stageDetail = stage === 1 ? 'first letters are shown'
         : (stage === 2 ? 'first and last letters are shown' : 'interior letters are shown');
-      hint = 'Stage ' + stage + '/' + maxStages + ': ' + stageDetail + ' on the player screen. Say the answer, then mark it CORRECT or INCORRECT.';
+      hint = 'Stage ' + stage + '/' + maxStages + ': ' + stageDetail + ' on the player screen. Select the earning team and assign the points.';
     } else if (s.timer.status === 'up') {
       hint = 'Clock is at 00:00 — GIVE HINT to fix some letters, or reveal the answer.';
     } else {
-      hint = 'Say the answer out loud, then mark it CORRECT or INCORRECT.';
+      hint = 'Select the team that earned the points, then award or deduct them below.';
     }
     if (aHint.textContent !== hint) aHint.textContent = hint;
 
     var stageTxt = 'STAGE ' + stage + ' / ' + maxStages;
     if (aHintStage.textContent !== stageTxt) aHintStage.textContent = stageTxt;
 
-    btnCorrect.disabled = qs.resolved && qs.verdict === 'correct';
-    btnIncorrect.disabled = qs.resolved && qs.verdict === 'incorrect';
     btnReveal.disabled = qs.revealed;
     btnHint.disabled = !!qs.resolved || !!qs.revealed ||
       s.timer.status !== 'up' || stage >= maxStages;
@@ -284,7 +265,7 @@
     var qs = s.qState[s.qIndex];
     var txt, cls = 'n-state';
     if (qs.resolved) { txt = 'QUESTION COMPLETE — ' + (qs.awarded ? (qs.awarded > 0 ? '+' : '') + qs.awarded + ' POINTS' : 'NO POINTS ASSIGNED YET'); cls += ' resolved'; }
-    else if (s.timer.status === 'up') { txt = "TIME'S UP — MARK CORRECT / INCORRECT"; cls += ' up'; }
+    else if (s.timer.status === 'up') { txt = "TIME'S UP — SCORE THE TEAM"; cls += ' up'; }
     else if (s.timer.status === 'running') { txt = 'TIMER ACTIVE — HOST IS COUNTING DOWN'; }
     else if (s.timer.status === 'paused') { txt = 'TIMER PAUSED — SYSTEM HOLD'; }
     else { txt = 'READY — TIMER DOES NOT AUTO-START'; }
@@ -407,7 +388,7 @@
       e.preventDefault();
       if (Store.state.timer.status === 'running') { Store.pauseTimer(); cue('pause'); }
       else if (Store.state.timer.status === 'paused') { Store.resumeTimer(); cue('resume'); }
-      else if (Store.state.timer.status === 'ready') { Store.startTimer(); cue('start'); }
+      else if (Store.state.phase === 'home') Store.startGame();
       return;
     }
     if (k === 'r') { Store.revealAnswer(); cue('reveal'); toast('Answer revealed', 'good'); }
