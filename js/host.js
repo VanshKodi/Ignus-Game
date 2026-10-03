@@ -12,6 +12,9 @@
   var Q = window.QUESTIONS;
   var pad2 = window.pad2;
   var $ = function (id) { return document.getElementById(id); };
+  function on(el, event, handler, options) { if (el) el.addEventListener(event, handler, options); return el; }
+  function roundLabel(round) { return window.ROUND_LABEL[round] || 'STANDARD'; }
+  function roundShort(round) { return round === 'image' ? 'IMG' : (round === 'audio' ? 'AUD' : 'STD'); }
 
   /* ---------------------------------------------------------
      audio — the host stays quiet while a projector window is
@@ -73,8 +76,8 @@
       $('h-link-text').textContent = 'ROOM · OFFLINE';
     }
   }
-  createRoomBtn.addEventListener('click', function () { createRoomBtn.disabled = true; roomMessage.textContent = 'Creating room…'; Store.createRoom(); });
-  reconnectRoomBtn.addEventListener('click', function () { Store.reconnect(); });
+  on(createRoomBtn, 'click', function () { createRoomBtn.disabled = true; roomMessage.textContent = 'Creating room…'; Store.createRoom(); });
+  on(reconnectRoomBtn, 'click', function () { Store.reconnect(); });
   Store.subscribeConnection(renderRoomConnection);
 
   /* ================= navigator + answer key ================= */
@@ -93,13 +96,13 @@
       html += '<button class="' + cls + '" data-i="' + i + '" data-round="' + q.round + '" ' +
         'title="' + esc(q.answer) + '">' +
         '<span class="nq">Q' + pad2(q.id) + '</span>' +
-        '<span class="nr">' + (q.round === 'image' ? 'IMG' : 'STD') + '</span>' +
+        '<span class="nr">' + roundShort(q.round) + '</span>' +
         '</button>';
     }
     if (navGrid.innerHTML !== html) navGrid.innerHTML = html;
   }
 
-  navGrid.addEventListener('click', function (e) {
+  on(navGrid, 'click', function (e) {
     var btn = e.target.closest('.nav-btn');
     if (!btn) return;
     SFX.unlock();
@@ -112,7 +115,7 @@
     for (var i = 0; i < Q.length; i++) {
       var q = Q[i];
       html += '<div class="key-row' + (i === s.qIndex ? ' is-current' : '') + '">' +
-        '<div class="key-q">Q' + pad2(q.id) + ' · ' + (q.round === 'image' ? 'IMAGE' : 'STANDARD') + ' — ' + esc(q.text) + '</div>' +
+        '<div class="key-q">Q' + pad2(q.id) + ' · ' + roundLabel(q.round) + ' — ' + esc(q.text) + '</div>' +
         '<div class="key-a">' + esc(q.answer) + '</div>' +
         '<div class="key-alias">ACCEPTS: ' + esc(([q.answer].concat(q.aliases || [])).join(' · ')) + '</div>' +
         '</div>';
@@ -126,7 +129,7 @@
   function renderCurrent(s) {
     var q = Q[s.qIndex];
     $('c-index').textContent = 'Q' + pad2(q.id);
-    $('c-round').textContent = q.round === 'image' ? 'IMAGE' : 'STANDARD';
+    $('c-round').textContent = roundLabel(q.round).replace(' ROUND', '');
     cText.textContent = q.text;
     if (q.image) {
       cImage.hidden = false;
@@ -145,6 +148,7 @@
   var btnStartT = $('btn-start-t'), btnPauseT = $('btn-pause-t'), btnResumeT = $('btn-resume-t'), btnResetT = $('btn-reset-t');
 
   function renderTimer(s) {
+    if (!tReadout || !tTime || !tState || !btnStartT || !btnPauseT || !btnResumeT || !btnResetT) return;
     var t = s.timer;
     var rem = Store.remainingMs(t, Date.now());
     var sec = (t.status === 'ready' || t.status === 'paused')
@@ -176,23 +180,23 @@
     btnResetT.disabled = (t.status === 'ready');
   }
 
-  btnStartT.addEventListener('click', function () {
+  on(btnStartT, 'click', function () {
     SFX.unlock();
     if (Store.state.phase === 'home' || Store.state.phase === 'cinematic' || Store.state.phase === 'complete') {
       if (Store.state.phase === 'home') { Store.startGame(); return; }
     }
     if (Store.state.phase === 'home') Store.startGame();
   });
-  btnPauseT.addEventListener('click', function () { Store.pauseTimer(); cue('pause'); toast('Timer paused'); });
-  btnResumeT.addEventListener('click', function () { Store.resumeTimer(); cue('resume'); toast('Timer resumed', 'good'); });
-  btnResetT.addEventListener('click', function () { Store.resetTimer(); toast('Timer reset → 00:45 READY'); });
+  on(btnPauseT, 'click', function () { Store.pauseTimer(); cue('pause'); toast('Timer paused'); });
+  on(btnResumeT, 'click', function () { Store.resumeTimer(); cue('resume'); toast('Timer resumed', 'good'); });
+  on(btnResetT, 'click', function () { Store.resetTimer(); toast('Timer reset → 00:45 READY'); });
 
   /* ================= verdict ================= */
   var aVerdict = $('a-verdict'), aAnswerText = $('a-answer-text'), aHint = $('a-hint');
   var btnReveal = $('btn-reveal');
   var btnHint = $('btn-hint'), aHintStage = $('a-hintstage');
 
-  btnReveal.addEventListener('click', function () {
+  on(btnReveal, 'click', function () {
     SFX.unlock();
     Store.revealAnswer();
     cue('reveal');
@@ -207,7 +211,7 @@
     renderAnswerState(Store.state);
   }
 
-  btnHint.addEventListener('click', giveHint);
+  on(btnHint, 'click', giveHint);
 
   function renderAnswerState(s) {
     var qs = s.qState[s.qIndex];

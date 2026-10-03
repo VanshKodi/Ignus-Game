@@ -14,6 +14,7 @@
   var pad2 = window.pad2;
 
   var $ = function (id) { return document.getElementById(id); };
+  function roundLabel(round) { return window.ROUND_LABEL[round] || 'STANDARD'; }
 
   var screens = {
     home: $('screen-home'),
@@ -585,13 +586,8 @@
       qNum.textContent = 'QUESTION ' + pad2(q.id);
       qText.textContent = q.text;
 
-      if (q.round === 'image') {
-        qType.textContent = 'IMAGE ROUND';
-        hdRound.textContent = 'IMAGE';
-      } else {
-        qType.textContent = 'STANDARD ROUND';
-        hdRound.textContent = 'STANDARD';
-      }
+      qType.textContent = roundLabel(q.round);
+      hdRound.textContent = roundLabel(q.round).replace(' ROUND', '');
 
       if (q.image) {
         qFigure.hidden = false;
@@ -729,7 +725,7 @@
     var tn = team ? team.name : '—';
     if (statusTeam.textContent !== tn) statusTeam.textContent = tn;
 
-    var round = Q[s.qIndex].round === 'image' ? 'IMAGE ROUND' : 'STANDARD ROUND';
+    var round = roundLabel(Q[s.qIndex].round);
     if (statusRound.textContent !== round) statusRound.textContent = round;
   }
 
