@@ -10,7 +10,7 @@ const rooms = new Map();
 const ROOM_CODE_LENGTH = 6;
 const ROOM_GRACE_MS = 60_000;
 const DURATION_MS = 45_000;
-const QUESTIONS_COUNT = 34;
+const QUESTIONS_COUNT = 13;
 const CODE_ALPHABET = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
 
 const types = { '.css': 'text/css; charset=utf-8', '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.json': 'application/json; charset=utf-8', '.png': 'image/png', '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg', '.svg': 'image/svg+xml', '.woff2': 'font/woff2' };
