@@ -1,0 +1,12 @@
+{
+  "name": "ignus-marvel-family-feud",
+  "version": "1.0.0",
+  "private": true,
+  "description": "IGNUS Marvel Family Feud live trivia show",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

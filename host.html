@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta name="theme-color" content="#080706" />
+<title>IGNUS — Host Control Panel · Marvel Family Feud</title>
+<meta name="robots" content="noindex, nofollow" />
+<link rel="icon" type="image/png" href="assets/clique-mark.png" />
+<link rel="stylesheet" href="css/base.css" />
+<link rel="stylesheet" href="css/host.css" />
+</head>
+<body class="host">
+<a class="skip-link" href="#main-console">Skip to control console</a>
+
+<header class="h-hd">
+  <div class="h-brand">
+    <span class="h-flame" aria-hidden="true">
+      <svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3q1 4 4 6.5t3 5.5a1 1 0 0 1-14 0 5 5 0 0 1 1-3 1 1 0 0 0 5 0c0-2-1.5-3-1.5-5q0-2 2.5-4"></path></svg>
+    </span>
+    <span class="h-name">IGNUS<span>.</span></span>
+    <span class="h-div"></span>
+    <span class="h-title">HOST CONTROL PANEL</span>
+    <span class="chip" id="h-phase">HOME</span>
+  </div>
+
+  <div class="h-actions">
+    <span class="chip" id="h-link"><i class="dot"></i><span id="h-link-text">PLAYER · CHECKING</span></span>
+    <button class="btn btn-sm btn-cy" id="btn-sound">SOUND ON</button>
+    <button class="btn btn-sm" id="btn-player">OPEN PLAYER SCREEN</button>
+    <button class="btn btn-sm btn-ghost" id="btn-host">RELOAD</button>
+    <button class="btn btn-sm btn-danger" id="btn-reset-game">RESET GAME</button>
+  </div>
+</header>
+
+<div class="h-shell" id="main-console">
+
+  <!-- ============ LEFT: question navigator ============ -->
+  <aside class="col col-nav">
+    <div class="panel">
+      <div class="panel-hd"><h3>Question Navigator</h3><span class="sys-label" id="nav-count">13</span></div>
+      <div class="panel-bd nav-grid" id="nav-grid"></div>
+    </div>
+
+    <div class="panel panel-fill">
+      <div class="panel-hd"><h3>Answer Key — Host Only</h3><span class="sys-label">PRIVATE</span></div>
+      <div class="panel-bd key" id="key-list"></div>
+    </div>
+  </aside>
+
+  <!-- ============ CENTRE: current question + controls ============ -->
+  <main class="col col-main">
+
+    <section class="panel q-panel">
+      <div class="panel-hd">
+        <h3>Current Question</h3>
+        <div class="hd-r">
+          <span class="chip cy" id="c-index">Q01</span>
+          <span class="chip" id="c-round">STANDARD</span>
+        </div>
+      </div>
+      <div class="panel-bd">
+        <div class="q-preview" id="c-preview">
+          <img id="c-image" alt="" width="960" height="540" loading="lazy" hidden />
+          <p id="c-text"></p>
+        </div>
+        <div class="q-answerbar">
+          <span class="k">CORRECT ANSWER</span>
+          <span class="v" id="c-answer"></span>
+          <span class="k">ALIASES</span>
+          <span class="a" id="c-aliases"></span>
+        </div>
+      </div>
+    </section>
+
+    <section class="panel t-panel">
+      <div class="panel-hd">
+        <h3>Timer</h3>
+        <span class="sys-label">TIMESTAMP-BASED · 45s CONTINUOUS</span>
+      </div>
+      <div class="panel-bd t-body">
+        <div class="t-readout" id="t-readout" data-status="ready">
+          <div class="t-time" id="t-time">00:45</div>
+          <div class="t-state" id="t-state">READY</div>
+        </div>
+        <div class="btn-grid t-btns">
+          <button class="btn btn-primary" id="btn-start-t">START TIMER</button>
+          <button class="btn" id="btn-pause-t">PAUSE TIMER</button>
+          <button class="btn btn-cy" id="btn-resume-t">RESUME TIMER</button>
+          <button class="btn btn-ghost" id="btn-reset-t">RESET TIMER</button>
+        </div>
+      </div>
+    </section>
+
+    <section class="panel a-panel">
+      <div class="panel-hd">
+        <h3>Verdict</h3>
+        <span class="chip" id="a-verdict">AWAITING ANSWER</span>
+      </div>
+      <div class="panel-bd">
+        <div class="a-answer">
+          <span class="k">ANSWER</span>
+          <span class="v" id="a-answer-text"></span>
+        </div>
+
+        <div class="a-tools">
+          <button class="btn btn-ghost" id="btn-hint" aria-describedby="a-hint">GIVE HINT</button>
+          <span class="a-hintstage" id="a-hintstage">STAGE 0 / 3</span>
+        </div>
+
+        <div class="btn-grid a-grid">
+          <button class="btn btn-cy" id="btn-reveal">REVEAL ANSWER</button>
+          <button class="btn btn-good" id="btn-correct">MARK CORRECT</button>
+          <button class="btn btn-danger" id="btn-incorrect">MARK INCORRECT</button>
+        </div>
+        <div class="a-hint" id="a-hint">Say the answer out loud, then mark it CORRECT or INCORRECT.</div>
+      </div>
+    </section>
+
+    <section class="panel n-panel">
+      <div class="panel-hd"><h3>Navigation</h3><span class="sys-label" id="n-hint">SPACE = START / PAUSE</span></div>
+      <div class="panel-bd">
+        <div class="btn-grid n-grid">
+          <button class="btn" id="btn-prev">PREVIOUS QUESTION</button>
+          <button class="btn btn-primary" id="btn-next">NEXT QUESTION</button>
+          <button class="btn btn-ghost" id="btn-reset-q">RESET QUESTION</button>
+          <button class="btn btn-ghost" id="btn-skip">SKIP QUESTION</button>
+        </div>
+        <div class="n-state" id="n-state">QUESTION NOT YET RESOLVED</div>
+      </div>
+    </section>
+  </main>
+
+  <!-- ============ RIGHT: teams + scoring ============ -->
+  <aside class="col col-teams">
+    <section class="panel">
+      <div class="panel-hd"><h3>Active Team</h3></div>
+      <div class="panel-bd">
+        <div class="active-team" id="active-team">TEAM A</div>
+        <div class="active-team-sub">Selected for scoring · click a team below to switch</div>
+      </div>
+    </section>
+
+    <section class="panel panel-fill">
+      <div class="panel-hd"><h3>Current Standings</h3><span class="sys-label" id="team-count"></span></div>
+      <div class="panel-bd">
+        <ul class="team-list" id="team-list"></ul>
+        <div class="team-ops">
+          <input class="field field-sm" id="team-name" name="team-name" type="text" placeholder="New team name…" autocomplete="off" maxlength="18" aria-label="New team name" />
+          <div class="ops-row">
+            <button class="btn btn-sm" id="btn-add-team">ADD TEAM</button>
+            <button class="btn btn-sm" id="btn-rename-team">RENAME</button>
+            <button class="btn btn-sm btn-danger" id="btn-del-team">DELETE</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="panel">
+      <div class="panel-hd"><h3>Assign Score</h3><span class="sys-label" id="score-target">—</span></div>
+      <div class="panel-bd">
+        <div class="score-grid">
+          <button class="btn" data-pts="10">+10</button>
+          <button class="btn" data-pts="20">+20</button>
+          <button class="btn" data-pts="30">+30</button>
+          <button class="btn" data-pts="40">+40</button>
+        </div>
+        <div class="ops-row custom-row">
+          <input class="field field-sm" id="pts-input" name="points" type="number" inputmode="numeric" step="5" value="15" aria-label="Custom points" />
+          <button class="btn btn-sm" id="btn-award-custom">AWARD</button>
+          <button class="btn btn-sm btn-danger" id="btn-deduct-custom">DEDUCT</button>
+        </div>
+        <div class="last-award" id="last-award">No score assigned yet.</div>
+      </div>
+    </section>
+  </aside>
+</div>
+
+<footer class="h-ft">
+  <span>MARVEL FAMILY FEUD</span><span class="sep">/</span>
+  <span>IGNUS · DOOMSDAY PROTOCOL</span><span class="sep">/</span>
+  <span>CLIQUE IT &amp; ANALYTICS CLUB, IMNU</span>
+  <span class="sep">/</span>
+  <span class="kbd-hints">SPACE START/PAUSE · H HINT · R REVEAL · C CORRECT · X INCORRECT · N NEXT · P PREVIOUS</span>
+</footer>
+
+<div class="toast" id="toast" aria-live="polite" role="status" hidden></div>
+
+<script src="js/questions.js"></script>
+<script src="js/state.js"></script>
+<script src="js/audio.js"></script>
+<script src="js/host.js"></script>
+</body>
+</html>

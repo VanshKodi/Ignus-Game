@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta name="theme-color" content="#080706" />
+<title>IGNUS — Marvel Family Feud</title>
+<meta name="description" content="MARVEL FAMILY FEUD — IGNUS Doomsday Protocol. A host-controlled live trivia event by CLIQUE IT &amp; Analytics Club, IMNU." />
+<link rel="icon" type="image/png" href="assets/clique-mark.png" />
+<link rel="stylesheet" href="css/base.css" />
+<link rel="stylesheet" href="css/player.css" />
+</head>
+<body class="player" data-phase="home">
+<a class="skip-link" href="#screen-game">Skip to game</a>
+
+<!-- ============================ HOME ============================ -->
+<section class="screen screen-home" id="screen-home" aria-label="Home">
+  <div class="hud-grid"></div>
+  <div class="home-art" aria-hidden="true"><img src="assets/ignus-arena.jpg" alt="" width="1920" height="1080" /></div>
+  <div class="hud-vignette"></div>
+  <div class="hud-noise"></div>
+
+  <div class="home-center">
+    <div class="home-brand">
+      <span class="brand-icon" aria-hidden="true">
+        <svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3q1 4 4 6.5t3 5.5a1 1 0 0 1-14 0 5 5 0 0 1 1-3 1 1 0 0 0 5 0c0-2-1.5-3-1.5-5q0-2 2.5-4"></path></svg>
+      </span>
+      IGNUS<span class="brand-period">.</span>
+    </div>
+
+    <div class="home-eyebrow"><span class="line"></span> DOOMSDAY PROTOCOL <span class="line"></span></div>
+
+    <h1 class="home-title">MARVEL<br /><em>FAMILY FEUD</em></h1>
+
+    <div class="home-rules" aria-label="Event information">
+      <div class="home-rule"><strong>13 QUESTIONS</strong></div>
+      <div class="home-rule"><strong>STANDARD + IMAGE ROUND</strong></div>
+    </div>
+
+    <button class="btn btn-primary home-cta" id="btn-start">
+      START FAMILY FEUD
+      <svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 3l14 9-14 9V3z"/></svg>
+    </button>
+
+    <div class="home-hint" id="home-hint">HOST CONTROLLED &nbsp;·&nbsp; 45 SECOND COUNTDOWN &nbsp;·&nbsp; ANSWERS REVEALED ON COMMAND</div>
+
+    <div class="home-link" id="home-player-status">
+      <span class="dot"></span><span id="home-status-text">PROJECTOR LINK STANDBY</span>
+      <button class="link-btn" id="btn-open-host">OPEN HOST PANEL</button>
+    </div>
+  </div>
+
+  <footer class="home-footer">
+    <svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3q1 4 4 6.5t3 5.5a1 1 0 0 1-14 0 5 5 0 0 1 1-3 1 1 0 0 0 5 0c0-2-1.5-3-1.5-5q0-2 2.5-4"></path></svg>
+    IGNUS <span class="sep">/</span> DOOMSDAY PROTOCOL <span class="sep">/</span> CLIQUE IT &amp; ANALYTICS CLUB, IMNU
+  </footer>
+</section>
+
+<!-- ========================= CINEMATIC ========================= -->
+<section class="screen screen-cine" id="screen-cinematic" aria-label="System activation" hidden>
+  <canvas id="fx-canvas"></canvas>
+  <div class="cine-copy" id="cine-copy">
+    <div class="cine-line" data-line="0">INITIALIZING CLIQUE NETWORK<span class="ell">...</span></div>
+    <div class="cine-line" data-line="1">IGNUS PROTOCOL DETECTED</div>
+    <div class="cine-line" data-line="2">MARVEL DATABASE DETECTED</div>
+    <div class="cine-line" data-line="3">CLIQUE IT &amp; ANALYTICS CLUB PRESENTS</div>
+    <div class="cine-line" data-line="4"><span class="cine-ignus">IGNUS</span><span class="cine-sub">DOOMSDAY PROTOCOL</span></div>
+    <div class="cine-line" data-line="5"><span class="cine-final">MARVEL FAMILY FEUD</span><span class="cine-sub cy">SYSTEM ONLINE</span></div>
+  </div>
+  <div class="cine-bar"><i id="cine-progress"></i></div>
+</section>
+
+<!-- =========================== GAME ============================ -->
+<section class="screen screen-game" id="screen-game" hidden aria-label="Question">
+  <div class="hud-grid"></div>
+  <div class="hud-vignette"></div>
+  <div class="hud-noise"></div>
+  <div class="hud-scan"></div>
+
+  <!-- persistent watermark, top-right -->
+  <div class="mark" aria-hidden="true">
+    <img class="mark-icon" src="assets/clique-mark.png" alt="" width="64" height="64" />
+    <img class="mark-word" src="assets/clique-wordmark.png" alt="" width="180" height="32" />
+    <i class="mark-frame"></i>
+  </div>
+
+  <header class="g-hd">
+    <div class="g-hd-l">
+      <span class="g-flame" aria-hidden="true">
+        <svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3q1 4 4 6.5t3 5.5a1 1 0 0 1-14 0 5 5 0 0 1 1-3 1 1 0 0 0 5 0c0-2-1.5-3-1.5-5q0-2 2.5-4"></path></svg>
+      </span>
+      <span class="g-hd-title">MARVEL FAMILY FEUD</span>
+      <span class="g-hd-sub">IGNUS · DOOMSDAY PROTOCOL</span>
+    </div>
+    <div class="g-hd-r">
+      <span class="chip" id="hd-round">STANDARD</span>
+      <span class="chip cy" id="hd-index">Q01 / 13</span>
+    </div>
+  </header>
+
+  <main class="g-body">
+    <div class="q-meta">
+      <div class="q-num" id="q-num">QUESTION 01</div>
+      <div class="q-type" id="q-type">STANDARD ROUND</div>
+    </div>
+
+    <div class="q-stage" id="q-stage">
+      <div class="q-figure" id="q-figure" hidden>
+        <div class="q-frame">
+          <span class="q-frame-tag">IMAGE INTEL</span>
+          <img id="q-image" alt="" width="960" height="540" fetchpriority="high" />
+          <span class="q-frame-scan"></span>
+        </div>
+      </div>
+      <p class="q-text" id="q-text"></p>
+      <div class="q-hint" id="q-hint" aria-live="polite" aria-label="Answer hint" hidden>
+        <span class="q-hint-tag">HINT <b id="q-hint-level">0</b> / 3</span>
+        <div class="q-hint-tiles" id="q-hint-tiles"></div>
+      </div>
+    </div>
+
+    <!-- reveal overlay -->
+    <div class="reveal" id="reveal" hidden>
+      <div class="reveal-panel">
+        <div class="reveal-seq" id="reveal-seq">
+          <span class="rv" data-step="0">CLASSIFIED DATA</span>
+          <span class="rv" data-step="1">DECRYPTING<span class="ell">...</span></span>
+          <span class="rv" data-step="2">ACCESS GRANTED</span>
+        </div>
+        <div class="reveal-answer" id="reveal-answer"></div>
+        <div class="reveal-rule"></div>
+      </div>
+    </div>
+
+    <!-- resolved strip -->
+    <div class="result" id="result" hidden>
+      <div class="result-l">
+        <span class="result-tag">QUESTION COMPLETE</span>
+        <span class="result-ans-label">ANSWER</span>
+        <span class="result-ans" id="result-answer"></span>
+      </div>
+      <div class="result-r" id="result-award" hidden>
+        <span class="result-pts" id="result-points"></span>
+        <span class="result-team" id="result-team"></span>
+      </div>
+    </div>
+  </main>
+
+  <footer class="g-ft">
+    <!-- scoreboard: secondary while a question is live -->
+    <div class="board" id="board">
+      <div class="board-hd">CURRENT STANDINGS</div>
+      <ul class="board-list" id="board-list"></ul>
+    </div>
+
+    <div class="clock" id="clock" data-status="ready">
+      <div class="clock-time" id="clock-time">00:45</div>
+      <div class="clock-state" id="clock-state">READY</div>
+      <div class="clock-track"><i id="clock-fill"></i></div>
+    </div>
+
+    <div class="status">
+      <div class="status-row"><span class="sys-label">SYSTEM STATUS</span><span class="status-v tech" id="status-line">AWAITING HOST</span></div>
+      <div class="status-row"><span class="sys-label">ACTIVE TEAM</span><span class="status-v tech" id="status-team">TEAM A</span></div>
+      <div class="status-row"><span class="sys-label">ROUND</span><span class="status-v tech" id="status-round">STANDARD</span></div>
+    </div>
+  </footer>
+</section>
+
+<!-- ========================= COMPLETE ========================== -->
+<section class="screen screen-done" id="screen-complete" hidden aria-label="Final results">
+  <div class="hud-grid"></div>
+  <div class="hud-vignette"></div>
+  <div class="hud-noise"></div>
+
+  <div class="mark" aria-hidden="true">
+    <img class="mark-icon" src="assets/clique-mark.png" alt="" width="64" height="64" />
+    <img class="mark-word" src="assets/clique-wordmark.png" alt="" width="180" height="32" />
+    <i class="mark-frame"></i>
+  </div>
+
+  <div class="done-center">
+    <div class="eyebrow">MARVEL FAMILY FEUD</div>
+    <h2 class="done-title">GAME COMPLETE</h2>
+    <div class="done-sub">FINAL STANDINGS</div>
+
+    <ol class="final" id="final-list"></ol>
+
+    <div class="done-sign">
+      <div class="done-ignus">IGNUS</div>
+      <div class="done-proto">DOOMSDAY PROTOCOL</div>
+      <div class="done-phase">PHASE COMPLETE</div>
+    </div>
+  </div>
+</section>
+
+<script src="js/questions.js"></script>
+<script src="js/state.js"></script>
+<script src="js/audio.js"></script>
+<script src="js/player.js"></script>
+</body>
+</html>
