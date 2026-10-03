@@ -12,6 +12,12 @@
     var(--background);
 }
 
+.room-gate { min-height: calc(100vh - 76px); display: grid; place-items: center; padding: 32px; background: var(--background); }
+.room-card { width: min(520px, 100%); padding: 42px; border: 1px solid var(--border); background: rgba(18, 16, 14, .94); text-align: center; box-shadow: 0 24px 80px rgba(0,0,0,.35); }
+.room-card h1 { margin: 12px 0; font-family: var(--display); letter-spacing: .05em; }
+.room-card p { color: var(--muted-fg); margin: 0 0 24px; }
+.room-card .btn { margin: 4px; }
+
 /* ---------------- header ---------------- */
 .h-hd {
   position: sticky; top: 0; z-index: 40;

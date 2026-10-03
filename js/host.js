@@ -17,13 +17,7 @@
      audio — the host stays quiet while a projector window is
      driving the show, otherwise it becomes the sound source
      --------------------------------------------------------- */
-  var HB_KEY = 'ignus-mff-player-hb';
-  function playerConnected() {
-    try {
-      var v = parseInt(window.localStorage.getItem(HB_KEY) || '0', 10);
-      return v && (Date.now() - v) < 2600;
-    } catch (e) { return false; }
-  }
+  function playerConnected() { return (Store.connection.playerCount || 0) > 0; }
   function cue(name) {
     if (!Store.state.sound) return;
     if (playerConnected()) return;   // projector owns the audio
@@ -39,6 +33,49 @@
     clearTimeout(toastTimer);
     toastTimer = setTimeout(function () { toastEl.hidden = true; }, 2400);
   }
+
+  /* ================= room gate ================= */
+  var roomGate = $('host-room-gate');
+  var consoleEl = $('main-console');
+  var createRoomBtn = $('btn-create-room');
+  var reconnectRoomBtn = $('btn-reconnect-room');
+  var roomMessage = $('host-room-message');
+  var roomCodeEl = $('h-room-code');
+  var roomCodeValue = $('h-room-code-value');
+
+  function renderRoomConnection(c) {
+    var joined = c.status === 'joined' && !!c.roomCode;
+    roomGate.hidden = joined;
+    consoleEl.hidden = !joined;
+    roomCodeEl.hidden = !joined;
+    if (!joined) {
+      createRoomBtn.hidden = false;
+      createRoomBtn.disabled = false;
+    }
+    if (joined) {
+      roomCodeValue.textContent = c.roomCode;
+      roomMessage.textContent = 'Room ready. Share this code with every player screen: ' + c.roomCode;
+    } else if (c.status === 'connecting') {
+      roomMessage.textContent = 'Connecting to the room server…';
+    } else if (c.status === 'connected') {
+      roomMessage.textContent = 'Connection ready. Create a room to begin.';
+      createRoomBtn.hidden = false;
+      createRoomBtn.disabled = false;
+    } else if (c.message) {
+      roomMessage.textContent = c.message;
+      reconnectRoomBtn.hidden = false;
+    }
+    if (c.status === 'joined') {
+      $('h-link-text').textContent = 'PLAYERS · ' + (c.playerCount || 0);
+      createRoomBtn.hidden = true;
+      reconnectRoomBtn.hidden = true;
+    } else if (c.status !== 'connecting') {
+      $('h-link-text').textContent = 'ROOM · OFFLINE';
+    }
+  }
+  createRoomBtn.addEventListener('click', function () { createRoomBtn.disabled = true; roomMessage.textContent = 'Creating room…'; Store.createRoom(); });
+  reconnectRoomBtn.addEventListener('click', function () { Store.reconnect(); });
+  Store.subscribeConnection(renderRoomConnection);
 
   /* ================= navigator + answer key ================= */
   var navGrid = $('nav-grid');
@@ -356,6 +393,11 @@
     Store.resetGame();
     toast('Game reset', 'bad');
   });
+  $('btn-close-room').addEventListener('click', function () {
+    if (!confirm('Close this room for all player screens?')) return;
+    Store.closeRoom();
+    toast('Room closed', 'bad');
+  });
 
   /* ================= keyboard shortcuts ================= */
   window.addEventListener('keydown', function (e) {
@@ -387,7 +429,7 @@
     phaseEl.className = 'chip' + (s.phase === 'playing' ? ' on' : (s.phase === 'complete' ? ' cy' : ''));
 
     var on = playerConnected();
-    var txt = on ? 'PLAYER · LINKED' : 'PLAYER · OFFLINE';
+    var txt = on ? 'PLAYERS · ' + Store.connection.playerCount : (Store.connection.status === 'joined' ? 'PLAYERS · NONE' : 'ROOM · OFFLINE');
     if (linkText.textContent !== txt) linkText.textContent = txt;
     linkEl.className = 'chip ' + (on ? 'on' : 'bad');
     if (s.sound) btnSound.textContent = playerConnected() ? 'SOUND ON (PLAYER)' : 'SOUND ON';

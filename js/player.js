@@ -22,15 +22,7 @@
     complete: $('screen-complete')
   };
 
-  /* ---------------------------------------------------------
-     player heartbeat (lets the host panel know a projector
-     window is actually open)
-     --------------------------------------------------------- */
-  var HB_KEY = 'ignus-mff-player-hb';
-  try { window.localStorage.setItem(HB_KEY, String(Date.now())); } catch (e) {}
-  setInterval(function () {
-    try { window.localStorage.setItem(HB_KEY, String(Date.now())); } catch (e) {}
-  }, 900);
+  /* Room connection is managed by GameStore; this screen is read-only. */
 
   /* ---------------------------------------------------------
      audio gating — the projector plays the show; the host
@@ -56,9 +48,22 @@
   /* ---------------------------------------------------------
      HOME
      --------------------------------------------------------- */
-  $('btn-start').addEventListener('click', function () {
-    SFX.unlock();
-    Store.startGame();
+  var roomCodeInput = $('room-code');
+  var joinRoomButton = $('btn-join-room');
+  var roomJoinMessage = $('room-join-message');
+  joinRoomButton.addEventListener('click', function () {
+    var code = roomCodeInput.value.trim();
+    if (Store.joinRoom(code)) { joinRoomButton.disabled = true; roomJoinMessage.textContent = 'Connecting to room ' + code.toUpperCase() + '…'; }
+  });
+  roomCodeInput.addEventListener('input', function () { roomCodeInput.value = roomCodeInput.value.replace(/[^a-z0-9]/gi, '').toUpperCase(); });
+  roomCodeInput.addEventListener('keydown', function (e) { if (e.key === 'Enter') joinRoomButton.click(); });
+  Store.subscribeConnection(function (c) {
+    var joined = c.status === 'joined' && !!c.roomCode;
+    if (joined) { roomCodeInput.value = c.roomCode; roomJoinMessage.textContent = 'ROOM ' + c.roomCode + ' LINKED · WAITING FOR HOST'; joinRoomButton.disabled = true; }
+    else if (c.status === 'connecting') roomJoinMessage.textContent = 'Connecting to the room server…';
+    else if (c.status === 'connected') { roomJoinMessage.textContent = 'Ask the host for the six-character room code.'; joinRoomButton.disabled = false; }
+    else if (c.message) { roomJoinMessage.textContent = c.message; joinRoomButton.disabled = false; }
+    $('home-status-text').textContent = joined ? 'ROOM ' + c.roomCode + ' LINKED' : 'ROOM LINK STANDBY';
   });
   $('btn-open-host').addEventListener('click', function () {
     try { window.open('host.html', 'ignus-host'); } catch (e) { location.href = 'host.html'; }

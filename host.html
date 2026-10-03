@@ -25,13 +25,25 @@
   </div>
 
   <div class="h-actions">
-    <span class="chip" id="h-link"><i class="dot"></i><span id="h-link-text">PLAYER · CHECKING</span></span>
+    <span class="chip" id="h-link"><i class="dot"></i><span id="h-link-text">ROOM · CONNECTING</span></span>
+    <span class="chip cy" id="h-room-code" hidden>ROOM — <b id="h-room-code-value">------</b></span>
     <button class="btn btn-sm btn-cy" id="btn-sound">SOUND ON</button>
     <button class="btn btn-sm" id="btn-player">OPEN PLAYER SCREEN</button>
+    <button class="btn btn-sm btn-danger" id="btn-close-room">CLOSE ROOM</button>
     <button class="btn btn-sm btn-ghost" id="btn-host">RELOAD</button>
     <button class="btn btn-sm btn-danger" id="btn-reset-game">RESET GAME</button>
   </div>
 </header>
+
+<section class="room-gate" id="host-room-gate">
+  <div class="room-card">
+    <div class="sys-label">LIVE ROOM CONTROL</div>
+    <h1>CREATE A GAME ROOM</h1>
+    <p id="host-room-message">Create a room, then share the code with the player screens.</p>
+    <button class="btn btn-primary" id="btn-create-room">CREATE ROOM</button>
+    <button class="btn btn-ghost" id="btn-reconnect-room" hidden>RECONNECT</button>
+  </div>
+</section>
 
 <div class="h-shell" id="main-console">
 

@@ -1,461 +1,72 @@
-/* MARVEL FAMILY FEUD — SHARED STATE STORE + TIMESTAMP TIMER
-   Works over file:// and http:// via localStorage polling + BroadcastChannel. */
-
+/* Server-authoritative room store. The public API intentionally mirrors the
+   original local store so the host controls and player renderer stay small. */
 (function () {
   'use strict';
 
-  var KEY = 'ignus-mff-state-v1';
-  var CHANNEL = 'ignus-mff-v1';
   var DURATION_MS = 45000;
+  var ROOM_KEY = 'ignus-mff-room-v1';
+  var isHost = document.body.classList.contains('host');
+  var listeners = [], connectionListeners = [], socket = null, reconnectTimer = 0;
+  var connection = { status: 'offline', role: isHost ? 'host' : 'player', roomCode: '', playerCount: 0, message: '' };
 
-  /* ---------------- default state ---------------- */
-
-  function defaultQuestionState() {
-    return {
-      revealed: false,      // answer shown on player screen
-      verdict: null,        // 'correct' | 'incorrect'
-      accepted: false,      // marked correct by the host
-      resolved: false,      // QUESTION COMPLETE state
-      awarded: 0,           // points awarded for this question
-      skipped: false,
-      hintStage: 0          // post-timeout hint ladder, 0..window.HINT_STAGES
-    };
-  }
-
+  function defaultQuestionState() { return { revealed: false, verdict: null, accepted: false, resolved: false, awarded: 0, skipped: false, hintStage: 0 }; }
   function defaultState() {
-    var qs = {};
-    for (var i = 0; i < window.QUESTIONS.length; i++) qs[i] = defaultQuestionState();
+    var qState = {}; for (var i = 0; i < window.QUESTIONS.length; i++) qState[i] = defaultQuestionState();
+    return { v: 1, rev: 0, updatedAt: Date.now(), phase: 'home', qIndex: 0, timer: { status: 'ready', durationMs: DURATION_MS, startedAt: null, elapsedBefore: 0 }, teams: [{ id: 't1', name: 'TEAM A', score: 0 }, { id: 't2', name: 'TEAM B', score: 0 }, { id: 't3', name: 'TEAM C', score: 0 }, { id: 't4', name: 'TEAM D', score: 0 }], activeTeamId: 't1', qState: qState, sound: true, boardFocus: false, lastAward: null, introRunAt: 0 };
+  }
+  var state = defaultState();
+  function emit() { listeners.slice().forEach(function (fn) { fn(state); }); }
+  function setConnection(next) { for (var k in next) connection[k] = next[k]; connectionListeners.slice().forEach(function (fn) { fn(connection); }); }
+  function emitError(msg) { setConnection({ status: 'error', message: msg }); }
+  function wsUrl() { return (location.protocol === 'https:' ? 'wss://' : 'ws://') + location.host + '/ws'; }
+  function savedRoom() { try { return JSON.parse(sessionStorage.getItem(ROOM_KEY) || 'null'); } catch (e) { return null; } }
+  function saveRoom(roomCode, hostToken) { try { sessionStorage.setItem(ROOM_KEY, JSON.stringify({ roomCode: roomCode, hostToken: hostToken })); } catch (e) {} }
+  function clearRoom() { try { sessionStorage.removeItem(ROOM_KEY); } catch (e) {} }
 
-    return {
-      v: 1,
-      rev: 1,
-      updatedAt: Date.now(),
-      phase: 'home',            // home | cinematic | playing | complete
-      qIndex: 0,
-      timer: {
-        status: 'ready',        // ready | running | paused | up
-        durationMs: DURATION_MS,
-        startedAt: null,        // epoch ms of current running segment
-        elapsedBefore: 0        // ms already consumed by previous segments
-      },
-      teams: [
-        { id: 't1', name: 'TEAM A', score: 0 },
-        { id: 't2', name: 'TEAM B', score: 0 },
-        { id: 't3', name: 'TEAM C', score: 0 },
-        { id: 't4', name: 'TEAM D', score: 0 }
-      ],
-      activeTeamId: 't1',
-      qState: qs,
-      sound: true,
-      boardFocus: false,        // scoreboard prominence (between questions / after scoring)
-      lastAward: null,          // { teamId, teamName, delta }
-      introRunAt: 0             // when the cinematic started (player derives phases from it)
+  function connect() {
+    if (socket && (socket.readyState === WebSocket.OPEN || socket.readyState === WebSocket.CONNECTING)) return;
+    setConnection({ status: 'connecting', message: '' });
+    try { socket = new WebSocket(wsUrl()); } catch (e) { setConnection({ status: 'offline', message: 'Unable to connect to the room server.' }); scheduleReconnect(); return; }
+    socket.onopen = function () {
+      var saved = savedRoom();
+      setConnection({ status: 'connected', message: '' });
+      if (isHost && saved && saved.hostToken) socket.send(JSON.stringify({ type: 'host_reconnect', roomCode: saved.roomCode, hostToken: saved.hostToken }));
+      else if (!isHost && saved && saved.roomCode) socket.send(JSON.stringify({ type: 'join_room', roomCode: saved.roomCode }));
     };
-  }
-
-  /* ---------------- storage ---------------- */
-
-  var state = null;
-  var listeners = [];
-  var memoryOnly = false;
-
-  function readRaw() {
-    if (memoryOnly) return null;
-    try { return window.localStorage.getItem(KEY); } catch (e) { memoryOnly = true; return null; }
-  }
-
-  function writeRaw(s) {
-    if (memoryOnly) return;
-    try { window.localStorage.setItem(KEY, JSON.stringify(s)); } catch (e) { memoryOnly = true; }
-  }
-
-  function load() {
-    var raw = readRaw();
-    if (!raw) return null;
-    try {
-      var parsed = JSON.parse(raw);
-      if (!parsed || parsed.v !== 1) return null;
-      return migrate(parsed);
-    } catch (e) {
-      return null;
-    }
-  }
-
-  function migrate(s) {
-    var def = defaultState();
-    if (!s.qState) s.qState = {};
-    for (var i = 0; i < window.QUESTIONS.length; i++) {
-      if (!s.qState[i]) s.qState[i] = defaultQuestionState();
-      else {
-        var d = defaultQuestionState();
-        for (var k in d) if (typeof s.qState[i][k] === 'undefined') s.qState[i][k] = d[k];
-      }
-    }
-    if (!s.teams || !s.teams.length) s.teams = def.teams;
-    if (!s.activeTeamId) s.activeTeamId = s.teams[0].id;
-    if (!s.timer) s.timer = def.timer;
-    if (typeof s.sound === 'undefined') s.sound = true;
-    if (typeof s.boardFocus === 'undefined') s.boardFocus = false;
-    return s;
-  }
-
-  state = load() || defaultState();
-
-  /* ---------------- sync ---------------- */
-
-  var bc = null;
-  try { bc = new BroadcastChannel(CHANNEL); } catch (e) { bc = null; }
-  if (bc) {
-    bc.onmessage = function (ev) {
-      var s = ev && ev.data;
-      if (s && typeof s.rev === 'number' && (!state || s.rev > state.rev)) {
-        state = migrate(s);
-        emit();
-      }
+    socket.onmessage = function (event) {
+      var msg; try { msg = JSON.parse(event.data); } catch (e) { return; }
+      if (msg.type === 'room_created') { saveRoom(msg.roomCode, msg.hostToken); setConnection({ status: 'joined', roomCode: msg.roomCode }); return; }
+      if (msg.type === 'room_reconnected' || msg.type === 'joined_room') { saveRoom(msg.roomCode, isHost ? savedRoom().hostToken : ''); setConnection({ status: 'joined', roomCode: msg.roomCode }); return; }
+      if (msg.type === 'state' && msg.state && msg.rev >= state.rev) { state = msg.state; setConnection({ status: 'joined', roomCode: msg.roomCode, playerCount: msg.playerCount || 0 }); emit(); return; }
+      if (msg.type === 'host_offline') { setConnection({ status: 'disconnected', message: msg.message }); return; }
+      if (msg.type === 'error') { if (msg.code === 'ROOM_CLOSED' || msg.code === 'ROOM_NOT_FOUND') clearRoom(); emitError(msg.message); }
     };
+    socket.onclose = function () { setConnection({ status: 'disconnected', message: 'Connection lost. Reconnecting…' }); scheduleReconnect(); };
+    socket.onerror = function () { setConnection({ status: 'offline', message: 'Room connection failed.' }); };
   }
-
-  // polling fallback — reliable across file:// windows where storage events don't fire
-  setInterval(function () {
-    var raw = readRaw();
-    if (!raw) return;
-    try {
-      var parsed = JSON.parse(raw);
-      if (parsed && typeof parsed.rev === 'number' && parsed.rev > state.rev) {
-        state = migrate(parsed);
-        emit();
-      }
-    } catch (e) { /* ignore */ }
-  }, 220);
-
-  function emit() {
-    for (var i = 0; i < listeners.length; i++) listeners[i](state);
-  }
-
-  function commit(mutator) {
-    mutator(state);
-    state.rev = (state.rev || 0) + 1;
-    state.updatedAt = Date.now();
-    writeRaw(state);
-    if (bc) { try { bc.postMessage(state); } catch (e) { /* ignore */ } }
-    emit();
-  }
-
-  /* ---------------- timer engine (timestamp based) ---------------- */
-
-  function elapsedMs(t, now) {
-    var base = t.elapsedBefore || 0;
-    if (t.status === 'running' && t.startedAt) base += (now || Date.now()) - t.startedAt;
-    return base;
-  }
-
-  function remainingMs(t, now) {
-    return Math.max(0, (t.durationMs || DURATION_MS) - elapsedMs(t, now));
-  }
-
-  function remainingSeconds(t, now) {
-    return Math.ceil(remainingMs(t, now) / 1000);
-  }
-
-  function startTimer() {
-    commit(function (s) {
-      if (s.timer.status === 'running') return;
-      if (s.timer.status === 'up') return;
-      if (s.timer.status === 'paused') {
-        s.timer.startedAt = Date.now();
-        s.timer.status = 'running';
-        return;
-      }
-      // ready -> running
-      s.timer.elapsedBefore = 0;
-      s.timer.startedAt = Date.now();
-      s.timer.status = 'running';
-    });
-  }
-
-  function pauseTimer() {
-    commit(function (s) {
-      if (s.timer.status !== 'running') return;
-      s.timer.elapsedBefore = elapsedMs(s.timer, Date.now());
-      s.timer.startedAt = null;
-      s.timer.status = 'paused';
-    });
-  }
-
-  function resumeTimer() {
-    commit(function (s) {
-      if (s.timer.status !== 'paused') return;
-      s.timer.startedAt = Date.now();
-      s.timer.status = 'running';
-    });
-  }
-
-  function resetTimer() {
-    commit(function (s) {
-      s.timer.status = 'ready';
-      s.timer.startedAt = null;
-      s.timer.elapsedBefore = 0;
-      s.qState[s.qIndex].hintStage = 0;
-    });
-  }
-
-  // called from the rAF loop; idempotent, safe from either window
-  function settleExpiredTimer() {
-    if (state.phase !== 'playing') return;
-    var t = state.timer;
-    if (t.status === 'running' && remainingMs(t, Date.now()) <= 0) {
-      commit(function (s) {
-        if (s.timer.status !== 'running') return;
-        s.timer.elapsedBefore = s.timer.durationMs;
-        s.timer.startedAt = null;
-        s.timer.status = 'up';
-      });
-      return true; // caller should fire the TIME'S UP cue
-    }
-    return false;
-  }
-
-  /* ---------------- phase / navigation ---------------- */
-
-  function startGame() {
-    commit(function (s) {
-      s.phase = 'cinematic';
-      s.introRunAt = Date.now();
-      s.qIndex = 0;
-      resetTimerIn(s);
-      s.boardFocus = false;
-      s.lastAward = null;
-      for (var i = 0; i < window.QUESTIONS.length; i++) s.qState[i] = defaultQuestionState();
-    });
-  }
-
-  function finishCinematic() {
-    commit(function (s) {
-      if (s.phase === 'cinematic') s.phase = 'playing';
-      resetTimerIn(s);
-      s.boardFocus = false;
-    });
-  }
-
-  function resetTimerIn(s) {
-    s.timer.status = 'ready';
-    s.timer.startedAt = null;
-    s.timer.elapsedBefore = 0;
-    if (s.qState[s.qIndex]) s.qState[s.qIndex].hintStage = 0;
-  }
-
-  /* post-timeout hint ladder — only after the clock hits 00:00 */
-  function hintStage() {
-    var qs = state.qState[state.qIndex];
-    return qs ? (qs.hintStage || 0) : 0;
-  }
-
-  function bumpHint() {
-    var qs = state.qState[state.qIndex];
-    if (!qs) return 0;
-    var max = window.HINT_STAGES || 3;
-    if (state.phase !== 'playing') return qs.hintStage || 0;
-    if (state.timer.status !== 'up') return qs.hintStage || 0;
-    if (qs.resolved || qs.revealed) return qs.hintStage || 0;
-    if ((qs.hintStage || 0) >= max) return qs.hintStage || 0;
-    var next = Math.min(max, (qs.hintStage || 0) + 1);
-    commit(function (s) {
-      if (s.qState[s.qIndex]) s.qState[s.qIndex].hintStage = next;
-    });
-    return next;
-  }
-
-  function goToQuestion(idx, opts) {
-    idx = Math.max(0, Math.min(window.QUESTIONS.length - 1, idx));
-    commit(function (s) {
-      s.qIndex = idx;
-      resetTimerIn(s);
-      s.boardFocus = false;
-      s.lastAward = null;
-      if (s.phase === 'home' || s.phase === 'cinematic') s.phase = 'playing';
-      if (s.phase === 'complete') s.phase = 'playing';
-      if (opts && opts.clear) s.qState[idx] = defaultQuestionState();
-    });
-  }
-
-  function nextQuestion() {
-    var i = state.qIndex;
-    if (i >= window.QUESTIONS.length - 1) {
-      commit(function (s) {
-        s.phase = 'complete';
-        resetTimerIn(s);
-        s.boardFocus = true;
-      });
-      return;
-    }
-    goToQuestion(i + 1, { clear: true });
-  }
-
-  function prevQuestion() { goToQuestion(state.qIndex - 1, { clear: true }); }
-
-  function resetCurrentQuestion() {
-    var i = state.qIndex;
-    commit(function (s) {
-      s.qState[i] = defaultQuestionState();
-      resetTimerIn(s);
-      s.lastAward = null;
-    });
-  }
-
-  function skipQuestion() {
-    var i = state.qIndex;
-    commit(function (s) {
-      s.qState[i].skipped = true;
-      s.qState[i].resolved = true;
-      s.qState[i].revealed = true;
-    });
-    nextQuestion();
-  }
-
-  function resetGame() {
-    commit(function (s) {
-      var def = defaultState();
-      s.phase = 'home';
-      s.qIndex = 0;
-      s.timer = def.timer;
-      s.qState = def.qState;
-      s.boardFocus = false;
-      s.lastAward = null;
-      s.introRunAt = 0;
-      for (var i = 0; i < s.teams.length; i++) s.teams[i].score = 0;
-    });
-  }
-
-  /* ---------------- verdict + reveal ---------------- */
-
-  function revealAnswer() {
-    var i = state.qIndex;
-    commit(function (s) {
-      s.qState[i].revealed = true;
-    });
-  }
-
-  function markVerdict(kind) { // 'correct' | 'incorrect'
-    var i = state.qIndex;
-    commit(function (s) {
-      s.qState[i].verdict = kind;
-      s.qState[i].revealed = true;
-      s.qState[i].resolved = true;
-      if (kind === 'correct') s.qState[i].accepted = true;
-      s.boardFocus = true;
-    });
-  }
-
-  function awardPoints(delta) {
-    var team = activeTeam();
-    if (!team) return;
-    commit(function (s) {
-      var t = null;
-      for (var i = 0; i < s.teams.length; i++) if (s.teams[i].id === s.activeTeamId) t = s.teams[i];
-      if (!t) return;
-      t.score += delta;
-      s.qState[s.qIndex].awarded = (s.qState[s.qIndex].awarded || 0) + delta;
-      s.lastAward = { teamId: t.id, teamName: t.name, delta: delta, at: Date.now() };
-      s.boardFocus = true;
-    });
-  }
-
-  /* ---------------- teams ---------------- */
-
-  function activeTeam() {
-    for (var i = 0; i < state.teams.length; i++) {
-      if (state.teams[i].id === state.activeTeamId) return state.teams[i];
-    }
-    return state.teams[0] || null;
-  }
-
-  function addTeam(name) {
-    commit(function (s) {
-      var id = 't' + Date.now().toString(36);
-      s.teams.push({ id: id, name: name || ('TEAM ' + String.fromCharCode(65 + s.teams.length)), score: 0 });
-      s.activeTeamId = id;
-    });
-  }
-
-  function renameTeam(id, name) {
-    commit(function (s) {
-      for (var i = 0; i < s.teams.length; i++) if (s.teams[i].id === id) s.teams[i].name = name;
-    });
-  }
-
-  function deleteTeam(id) {
-    commit(function (s) {
-      if (s.teams.length <= 1) return;
-      var idx = -1;
-      for (var i = 0; i < s.teams.length; i++) if (s.teams[i].id === id) idx = i;
-      if (idx < 0) return;
-      s.teams.splice(idx, 1);
-      if (s.activeTeamId === id) s.activeTeamId = s.teams[0].id;
-    });
-  }
-
-  function selectTeam(id) {
-    commit(function (s) { s.activeTeamId = id; });
-  }
-
-  function setTeamScore(id, score) {
-    commit(function (s) {
-      for (var i = 0; i < s.teams.length; i++) if (s.teams[i].id === id) s.teams[i].score = score;
-    });
-  }
-
-  function toggleSound() {
-    commit(function (s) { s.sound = !s.sound; });
-  }
-
-  function setBoardFocus(v) {
-    commit(function (s) { s.boardFocus = !!v; });
-  }
-
-  /* ---------------- public API ---------------- */
+  function scheduleReconnect() { clearTimeout(reconnectTimer); reconnectTimer = setTimeout(connect, 1500); }
+  function send(message) { if (!socket || socket.readyState !== WebSocket.OPEN) { emitError('Not connected to a room.'); return false; } socket.send(JSON.stringify(message)); return true; }
+  function command(name, args) { if (!isHost) return false; return send({ type: 'command', command: name, args: args || {} }); }
+  function remainingMs(t, now) { var base = t.elapsedBefore || 0; if (t.status === 'running' && t.startedAt) base += (now || Date.now()) - t.startedAt; return Math.max(0, (t.durationMs || DURATION_MS) - base); }
+  function elapsedMs(t, now) { return (t.elapsedBefore || 0) + (t.status === 'running' && t.startedAt ? (now || Date.now()) - t.startedAt : 0); }
+  function activeTeam() { for (var i = 0; i < state.teams.length; i++) if (state.teams[i].id === state.activeTeamId) return state.teams[i]; return state.teams[0] || null; }
 
   window.GameStore = {
-    KEY: KEY,
-    DURATION_MS: DURATION_MS,
-    defaultQuestionState: defaultQuestionState,
-    get state() { return state; },
-    defaultState: defaultState,
+    DURATION_MS: DURATION_MS, defaultQuestionState: defaultQuestionState,
+    get state() { return state; }, get connection() { return connection; },
     subscribe: function (fn) { listeners.push(fn); return function () { var i = listeners.indexOf(fn); if (i >= 0) listeners.splice(i, 1); }; },
-    commit: commit,
-    reload: function () { var s = load(); if (s && s.rev >= state.rev) { state = s; emit(); } },
-
-    remainingMs: remainingMs,
-    remainingSeconds: remainingSeconds,
-    elapsedMs: elapsedMs,
-    settleExpiredTimer: settleExpiredTimer,
-
-    startTimer: startTimer,
-    pauseTimer: pauseTimer,
-    resumeTimer: resumeTimer,
-    resetTimer: resetTimer,
-    hintStage: hintStage,
-    bumpHint: bumpHint,
-
-    startGame: startGame,
-    finishCinematic: finishCinematic,
-    goToQuestion: goToQuestion,
-    nextQuestion: nextQuestion,
-    prevQuestion: prevQuestion,
-    resetCurrentQuestion: resetCurrentQuestion,
-    skipQuestion: skipQuestion,
-    resetGame: resetGame,
-
-    revealAnswer: revealAnswer,
-    markVerdict: markVerdict,
-    awardPoints: awardPoints,
-
-    activeTeam: activeTeam,
-    addTeam: addTeam,
-    renameTeam: renameTeam,
-    deleteTeam: deleteTeam,
-    selectTeam: selectTeam,
-    setTeamScore: setTeamScore,
-    toggleSound: toggleSound,
-    setBoardFocus: setBoardFocus
+    subscribeConnection: function (fn) { connectionListeners.push(fn); fn(connection); return function () { var i = connectionListeners.indexOf(fn); if (i >= 0) connectionListeners.splice(i, 1); }; },
+    createRoom: function () { connect(); var wait = setInterval(function () { if (socket && socket.readyState === WebSocket.OPEN) { clearInterval(wait); send({ type: 'create_room' }); } }, 50); setTimeout(function () { clearInterval(wait); }, 5000); },
+    joinRoom: function (code) { code = String(code || '').replace(/[^a-z0-9]/gi, '').toUpperCase(); if (code.length !== 6) { emitError('Enter the 6-character room code.'); return false; } saveRoom(code, ''); connect(); var wait = setInterval(function () { if (socket && socket.readyState === WebSocket.OPEN) { clearInterval(wait); send({ type: 'join_room', roomCode: code }); } }, 50); setTimeout(function () { clearInterval(wait); }, 5000); return true; },
+    reconnect: function () { if (socket) try { socket.close(); } catch (e) {} connect(); },
+    closeRoom: function () { if (isHost) send({ type: 'close_room' }); clearRoom(); },
+    leaveRoom: function () { clearRoom(); if (socket) socket.close(); state = defaultState(); setConnection({ status: 'offline', roomCode: '' }); emit(); },
+    remainingMs: remainingMs, elapsedMs: elapsedMs,
+    settleExpiredTimer: function () { return false; },
+    startTimer: function () { command('startTimer'); }, pauseTimer: function () { command('pauseTimer'); }, resumeTimer: function () { command('resumeTimer'); }, resetTimer: function () { command('resetTimer'); }, hintStage: function () { var q = state.qState[state.qIndex]; return q ? q.hintStage || 0 : 0; }, bumpHint: function () { command('bumpHint'); return state.qState[state.qIndex].hintStage || 0; },
+    startGame: function () { command('startGame'); }, finishCinematic: function () { command('finishCinematic'); }, goToQuestion: function (i, opts) { command('goToQuestion', { index: i, clear: !!(opts && opts.clear) }); }, nextQuestion: function () { command('nextQuestion'); }, prevQuestion: function () { command('prevQuestion'); }, resetCurrentQuestion: function () { command('resetCurrentQuestion'); }, skipQuestion: function () { command('skipQuestion'); }, resetGame: function () { command('resetGame'); },
+    revealAnswer: function () { command('revealAnswer'); }, markVerdict: function (kind) { command('markVerdict', { kind: kind }); }, awardPoints: function (delta) { command('awardPoints', { delta: delta }); },
+    activeTeam: activeTeam, addTeam: function (name) { command('addTeam', { name: name }); }, renameTeam: function (id, name) { command('renameTeam', { id: id, name: name }); }, deleteTeam: function (id) { command('deleteTeam', { id: id }); }, selectTeam: function (id) { command('selectTeam', { id: id }); }, setTeamScore: function () {}, toggleSound: function () { command('toggleSound'); }, setBoardFocus: function (v) { command('setBoardFocus', { value: v }); }
   };
+  connect();
 })();

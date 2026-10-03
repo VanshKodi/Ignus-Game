@@ -5,6 +5,12 @@
 
 .player { overflow: hidden; }
 
+.room-join { width: min(440px, 100%); margin: 28px auto 18px; text-align: left; }
+.room-join label { display: block; margin-bottom: 8px; color: var(--muted-fg); font: 700 12px/1 var(--body); letter-spacing: .12em; }
+.room-join-row { display: flex; gap: 10px; }
+.room-join input { min-width: 0; flex: 1; padding: 14px 16px; border: 1px solid var(--border); background: rgba(0,0,0,.3); color: var(--foreground); font: 700 20px/1 var(--display); letter-spacing: .18em; text-transform: uppercase; }
+.room-join p { margin: 10px 0 0; color: var(--muted-fg); font-size: 12px; }
+
 .screen {
   position: fixed; inset: 0;
   display: none;
