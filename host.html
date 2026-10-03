@@ -50,7 +50,7 @@
   <!-- ============ LEFT: question navigator ============ -->
   <aside class="col col-nav">
     <div class="panel">
-      <div class="panel-hd"><h3>Question Navigator</h3><span class="sys-label" id="nav-count">13</span></div>
+      <div class="panel-hd"><h3>Question Navigator</h3><span class="sys-label" id="nav-count">16</span></div>
       <div class="panel-bd nav-grid" id="nav-grid"></div>
     </div>
 
@@ -75,6 +75,11 @@
         <div class="q-preview" id="c-preview">
           <img id="c-image" alt="" width="960" height="540" loading="lazy" hidden />
           <p id="c-text"></p>
+        </div>
+        <div class="audio-cue" id="c-audio-wrap" hidden>
+          <span class="sys-label" id="c-audio-label">AUDIO CUE</span>
+          <p id="c-audio-prompt"></p>
+          <audio id="c-audio" controls preload="metadata"></audio>
         </div>
         <div class="q-answerbar">
           <span class="k">CORRECT ANSWER</span>

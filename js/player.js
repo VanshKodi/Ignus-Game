@@ -562,6 +562,7 @@
      ========================================================= */
   var qNum = $('q-num'), qType = $('q-type'), qText = $('q-text');
   var qFigure = $('q-figure'), qImage = $('q-image');
+  var qAudioWrap = $('q-audio-wrap'), qAudioLabel = $('q-audio-label'), qAudio = $('q-audio');
   var qFrameTag = qFigure.querySelector('.q-frame-tag');
   var qStage = $('q-stage');
   var qHint = $('q-hint'), qHintTiles = $('q-hint-tiles'), qHintLevel = $('q-hint-level');
@@ -601,6 +602,20 @@
         qFigure.hidden = true;
         qStage.classList.remove('has-image');
         qImage.removeAttribute('src');
+      }
+      if (q.audio && qAudioWrap && qAudio) {
+        qAudioWrap.hidden = false;
+        qAudioLabel.textContent = q.audioLabel || 'AUDIO CUE';
+        if (qAudio.getAttribute('src') !== q.audio) {
+          qAudio.setAttribute('src', q.audio);
+          qAudio.load();
+          var playAudio = qAudio.play();
+          if (playAudio && playAudio.catch) playAudio.catch(function () { /* browser autoplay policy */ });
+        }
+      } else if (qAudioWrap && qAudio) {
+        qAudioWrap.hidden = true;
+        qAudio.pause();
+        qAudio.removeAttribute('src');
       }
       hdIndex.textContent = 'Q' + pad2(q.id) + ' / ' + Q.length;
 

@@ -33,8 +33,8 @@
     <h1 class="home-title">MARVEL<br /><em>FAMILY FEUD</em></h1>
 
     <div class="home-rules" aria-label="Event information">
-      <div class="home-rule"><strong>13 QUESTIONS</strong></div>
-      <div class="home-rule"><strong>STANDARD + IMAGE ROUND</strong></div>
+      <div class="home-rule"><strong>16 QUESTIONS</strong></div>
+      <div class="home-rule"><strong>STANDARD + IMAGE + AUDIO</strong></div>
     </div>
 
     <div class="room-join" id="room-join">
@@ -95,7 +95,7 @@
     </div>
     <div class="g-hd-r">
       <span class="chip" id="hd-round">STANDARD</span>
-      <span class="chip cy" id="hd-index">Q01 / 13</span>
+      <span class="chip cy" id="hd-index">Q01 / 16</span>
     </div>
   </header>
 
@@ -118,6 +118,11 @@
         <span class="q-hint-tag">HINT <b id="q-hint-level">0</b> / 3</span>
         <div class="q-hint-tiles" id="q-hint-tiles"></div>
       </div>
+    </div>
+
+    <div class="q-audio" id="q-audio-wrap" hidden>
+      <span class="q-audio-label" id="q-audio-label">AUDIO CUE</span>
+      <audio id="q-audio" controls preload="auto"></audio>
     </div>
 
     <!-- reveal overlay -->

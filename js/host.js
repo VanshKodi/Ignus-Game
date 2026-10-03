@@ -125,6 +125,7 @@
 
   /* ================= current question ================= */
   var cText = $('c-text'), cImage = $('c-image'), cAnswer = $('c-answer'), cAliases = $('c-aliases');
+  var cAudioWrap = $('c-audio-wrap'), cAudioLabel = $('c-audio-label'), cAudioPrompt = $('c-audio-prompt'), cAudio = $('c-audio');
 
   function renderCurrent(s) {
     var q = Q[s.qIndex];
@@ -138,6 +139,16 @@
     } else {
       cImage.hidden = true;
       cImage.removeAttribute('src');
+    }
+    if (q.audio && cAudioWrap && cAudio) {
+      cAudioWrap.hidden = false;
+      cAudioLabel.textContent = q.audioLabel || 'AUDIO CUE';
+      cAudioPrompt.textContent = q.audioPrompt || '';
+      if (cAudio.getAttribute('src') !== q.audio) { cAudio.setAttribute('src', q.audio); cAudio.load(); }
+    } else if (cAudioWrap && cAudio) {
+      cAudioWrap.hidden = true;
+      cAudio.pause();
+      cAudio.removeAttribute('src');
     }
     cAnswer.textContent = q.answer;
     cAliases.textContent = (q.aliases || []).join(' · ');

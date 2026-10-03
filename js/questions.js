@@ -1,4 +1,4 @@
-/* MARVEL FAMILY FEUD — OFFICIAL QUIZ MASTER BANK (Q01–Q13) */
+/* MARVEL FAMILY FEUD — OFFICIAL QUIZ MASTER BANK (Q01–Q13 + requested audio cues) */
 window.QUESTIONS = [
   { id: 1, round: 'standard', image: 'assets/img/q01-hex-town.jpg', imageAlt: 'The Hex around Westview', text: 'What is the name of the town where Wanda creates the Hex in WandaVision?', answer: 'Westview', aliases: ['westview', 'west view'] },
   { id: 2, round: 'standard', image: 'assets/img/q02-celestial-head.jpg', imageAlt: 'The severed celestial head Knowhere', text: "What is the name of the severed celestial head / planet where the Collector's museum is located?", answer: 'Knowhere', aliases: ['knowhere', 'know where', 'nowhere'] },
@@ -12,7 +12,10 @@ window.QUESTIONS = [
   { id: 10, round: 'standard', image: 'assets/img/q10-cosmic-child.jpg', imageAlt: 'Franklin Richards as a child', text: "What is the name of Reed Richards (Mister Fantastic) and Sue Storm (Invisible Woman)'s reality-warping son?", answer: 'Franklin Richards', aliases: ['franklin', 'franklin richards'] },
   { id: 11, round: 'image', image: 'assets/img/q11-red-guardian.jpg', imageAlt: 'Red Guardian in red armor', text: 'What is the real civilian name of Red Guardian?', answer: 'Alexei Shostakov', aliases: ['alexei', 'alexei shostakov', 'alexi shostakov'] },
   { id: 12, round: 'image', image: 'assets/img/q12-void.jpg', imageAlt: 'The Void, Sentry\'s shadow entity', text: "What is the name of the dark psychological entity created from Bob's trauma?", answer: 'The Void', aliases: ['the void', 'void'] },
-  { id: 13, round: 'image', image: 'assets/img/q13-cloak.jpg', imageAlt: 'Doctor Strange with the Cloak of Levitation', text: "What is the official name of Doctor Strange's sentient red cape?", answer: 'Cloak of Levitation', aliases: ['cloak of levitation', 'the cloak', 'cloak'] }
+  { id: 13, round: 'image', image: 'assets/img/q13-cloak.jpg', imageAlt: 'Doctor Strange with the Cloak of Levitation', text: "What is the official name of Doctor Strange's sentient red cape?", answer: 'Cloak of Levitation', aliases: ['cloak of levitation', 'the cloak', 'cloak'] },
+  { id: 27, round: 'audio', audio: 'assets/audio/q27.mp4', audioLabel: 'AUDIO TRACK #1 · DIALOGUE CLIP', audioPrompt: "Play dialogue: ‘The power of the sun, in the palm of my hand.’", text: 'Which Spider-Man villain speaks this iconic line?', answer: 'Doctor Octopus (Doc Ock)', aliases: ['doctor octopus', 'doc ock', 'doc octopus', 'otto octavius'] },
+  { id: 28, round: 'audio', audio: 'assets/audio/q28.mp4', audioLabel: 'AUDIO TRACK #2 · VILLAIN VOICE CLIP', audioPrompt: 'Play a deep booming villain voice threatening the collider in Into the Spider-Verse.', text: 'Name the villain who opened the dimensional collider.', answer: 'Wilson Fisk / Kingpin', aliases: ['wilson fisk', 'kingpin', 'fisk'] },
+  { id: 33, round: 'audio', audio: 'assets/audio/q33.mp4', audioLabel: 'AUDIO TRACK #4 · FAMOUS QUOTE', audioPrompt: "Play audio clip: ‘Dormammu, I've come to bargain.’", text: 'Who is speaking these repeated words to the ruler of the Dark Dimension?', answer: 'Doctor Stephen Strange', aliases: ['doctor strange', 'stephen strange', 'strange'] }
 ];
 
 window.ROUND_LABEL = { standard: 'STANDARD', image: 'IMAGE ROUND', audio: 'AUDIO ROUND' };

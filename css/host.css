@@ -106,6 +106,9 @@
   border-radius: var(--radius);
   flex-shrink: 0;
 }
+.audio-cue { margin-top: 14px; padding: 12px 14px; border: 1px solid oklch(65% .12 225 / .35); background: oklch(22% .04 225 / .18); }
+.audio-cue p { margin: 6px 0 10px; color: var(--muted-fg); font: 600 12px/1.4 var(--font-tech); }
+.audio-cue audio { width: min(100%, 520px); height: 34px; }
 .q-preview p {
   margin: 0;
   font: 700 17px/1.35 var(--font-display);
